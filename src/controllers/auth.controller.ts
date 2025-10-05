@@ -31,9 +31,9 @@ export const register = async (req: Request, res: Response) => {
       await redisClient.del(`refresh-token:${user._id}`);
     }
 
-    const accessToken = generateAccessToken({ id: user._id, role: user.role });
+    const accessToken = generateAccessToken({ id: String(user._id), role: user.role });
     const refreshToken = generateRefreshToken({
-      id: user._id,
+      id:  String(user._id),
       role: user.role,
     });
 
@@ -74,12 +74,12 @@ export const login = async (req: Request, res: Response) => {
         .status(400)
         .json({ message: "Invalid credentials", status: 400 });
 
-    const accessToken = generateAccessToken({ id: user._id, role: user.role });
+    const accessToken = generateAccessToken({ id:  String(user._id), role: user.role });
 
     let refreshToken = await redisClient.get(`refresh-token:${user._id}`);
 
     if (!refreshToken) {
-      refreshToken = generateRefreshToken({ id: user._id, role: user.role });
+      refreshToken = generateRefreshToken({ id:  String(user._id), role: user.role });
 
       await redisClient.set(`refresh-token:${user._id}`, refreshToken, {
         EX: 7 * 24 * 60 * 60,

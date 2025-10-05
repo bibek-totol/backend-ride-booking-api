@@ -24,15 +24,14 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       return res.status(401).json({ message: 'Invalid token', status: 401 });
     }
 
-    // attach minimal user info to request
     req.user = { id: decoded.id, role: decoded.role };
 
-    // ensure user exists and is allowed to act
+    
     const user = await User.findById(decoded.id).select('blocked approved role');
     if (!user) return res.status(404).json({ message: 'User not found', status: 404 });
     if ((user as any).blocked) return res.status(403).json({ message: 'User is blocked', status: 403 });
     if ((user as any).role !== 'admin' && !(user as any).approved) {
-      // non-admin users must be approved
+    
       return res.status(403).json({ message: 'User not approved', status: 403 });
     }
 
