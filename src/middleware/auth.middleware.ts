@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/jwt';
-import User, { IUser, Role } from '../models/user.model';
+import User, {  Role } from '../models/user.model';
 
 declare global {
   namespace Express {
