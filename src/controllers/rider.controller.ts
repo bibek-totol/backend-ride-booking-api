@@ -69,7 +69,7 @@ export const getRide = async (req: Request, res: Response) => {
     if (!ride) return res.status(404).json({ message: 'Ride not found', status: 404 });
     if (ride.rider.toString() !== riderId) return res.status(403).json({ message: 'Forbidden', status: 403 });
 
-    res.json({ ride, status: 200 });
+    res.json({ ride, status: 200, message: 'Ride fetched' });
   } catch (err: any) {
     res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
   }
