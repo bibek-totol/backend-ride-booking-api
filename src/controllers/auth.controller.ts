@@ -9,6 +9,7 @@ import {
 import { getRedis } from "../config/redis";
 import { loginSchema, registerSchema } from "../validation/schemas";
 import { maskToken } from "../utils/maskToken";
+import { error } from "console";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -43,7 +44,7 @@ export const register = async (req: Request, res: Response) => {
 
 
     await redisClient.set(`access-token:${user._id}`, accessToken, {
-      EX: 15 * 60,
+      EX: 60 * 60,
     });
 
     res.status(201).json({
@@ -87,7 +88,7 @@ export const login = async (req: Request, res: Response) => {
     if (!accessToken) {
       accessToken = generateAccessToken({ id:  String(user._id), role: user.role });
       await redisClient.set(`access-token:${user._id}`, accessToken, {
-        EX: 15 * 60,
+        EX: 60 * 60,
       });
     }
 
@@ -118,38 +119,52 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+
+
+
 export const refreshToken = async (req: Request, res: Response) => {
-  const { token } = req.body;
-  if (!token)
-    return res
-      .status(400)
-      .json({ message: "Refresh token required", status: 400 });
+  const { refreshtoken } = req.body;
+
+  if (!refreshtoken) {
+    return res.status(400).json({ message: "Refresh token required" });
+  }
 
   try {
+    const decoded:any = verifyRefreshToken(refreshtoken) ;
     const redisClient = getRedis();
-    const decoded: any = verifyRefreshToken(token);
 
-    const storedToken = await redisClient.get(`refresh-token:${decoded.id}`);
-    if (!storedToken || storedToken !== token) {
-      return res
-        .status(403)
-        .json({ message: "Invalid or expired refresh token", status: 403 });
+    let storedToken;
+    try {
+      storedToken = await redisClient.get(`refresh-token:${decoded.id}`);
+    } catch (redisErr) {
+    
+      return res.status(500).json({ message: "Internal server error",error: redisErr });
     }
 
-    const accessToken = generateAccessToken({
-      id: decoded.id,
-      role: decoded.role,
+    if (!storedToken || storedToken !== refreshtoken) {
+      return res.status(403).json({ message: "Invalid or expired refresh token" });
+    }
+
+    let accessToken = await redisClient.get(`access-token:${decoded.id}`);
+
+    if (!accessToken) {
+      accessToken = generateAccessToken({ id: decoded.id, role: decoded.role });
+      await redisClient.set(`access-token:${decoded.id}`, accessToken, { EX: 60 * 60 });
+    }
+
+  
+    const newRefreshToken = generateRefreshToken({ id: decoded.id, role: decoded.role });
+    await redisClient.set(`refresh-token:${decoded.id}`, newRefreshToken, { EX: 7 * 24 * 60 * 60 });
+
+    return res.status(200).json({
+      accessToken,
+      refreshToken: newRefreshToken,
+      message: "Token refreshed successfully",
     });
 
-    res.json({
-      accessToken,
-      status: 200,
-      message: "Access token refreshed successfully",
-    });
   } catch (err: any) {
-    res
-      .status(403)
-      .json({ message: err.message || "Invalid refresh token", status: 403 });
+  
+    return res.status(403).json({ message: err.message || "Invalid refresh token" });
   }
 };
 

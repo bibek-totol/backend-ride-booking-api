@@ -7,7 +7,7 @@ const router = Router();
 const { authenticate, authorize } = authMiddleware;
 
 
-router.post('/:id/accept', authenticate, authorize(['driver']), acceptRide);
+router.put('/:id/accept', authenticate, authorize(['driver']), acceptRide);
 
 
 router.post('/:id/reject', authenticate, authorize(['driver']), rejectRide);
