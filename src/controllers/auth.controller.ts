@@ -10,9 +10,9 @@ import { getRedis } from "../config/redis";
 import { loginSchema, registerSchema } from "../validation/schemas";
 import { maskToken } from "../utils/maskToken";
 
-const redisClient = getRedis();
 export const register = async (req: Request, res: Response) => {
   try {
+    const redisClient = getRedis();
     const data = registerSchema.parse(req.body);
 
     const existing = await User.findOne({ email: data.email });
@@ -62,11 +62,12 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
+    const redisClient = getRedis();
     const data = loginSchema.parse(req.body);
 
     const user = await User.findOne({ email: data.email });
     if (!user)
-      return res.status(404).json({ message: "User not found", status: 404 });
+      return res.status(404).json({ message: "Currently No User Found", status: 404 });
 
     const match = await comparePassword(data.password, user.password);
     if (!match)
@@ -93,8 +94,8 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
       },
-      accessToken: maskToken(accessToken),
-      refreshToken: maskToken(refreshToken),
+      accessToken: accessToken,
+      refreshToken: refreshToken,
       message: "Login successful",
       status: 200,
     });
@@ -113,6 +114,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       .json({ message: "Refresh token required", status: 400 });
 
   try {
+    const redisClient = getRedis();
     const decoded: any = verifyRefreshToken(token);
 
     const storedToken = await redisClient.get(`refresh-token:${decoded.id}`);
@@ -138,3 +140,6 @@ export const refreshToken = async (req: Request, res: Response) => {
       .json({ message: err.message || "Invalid refresh token", status: 403 });
   }
 };
+
+
+
