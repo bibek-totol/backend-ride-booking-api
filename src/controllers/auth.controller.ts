@@ -41,6 +41,11 @@ export const register = async (req: Request, res: Response) => {
       EX: 7 * 24 * 60 * 60,
     });
 
+
+    await redisClient.set(`access-token:${user._id}`, accessToken, {
+      EX: 15 * 60,
+    });
+
     res.status(201).json({
       user: {
         id: user._id,
@@ -48,8 +53,8 @@ export const register = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
       },
-      accessToken: maskToken(accessToken),
-      refreshToken: maskToken(refreshToken),
+      accessToken: accessToken,
+      refreshToken: refreshToken,
       message: "User registered successfully",
       status: 201,
     });
@@ -75,9 +80,16 @@ export const login = async (req: Request, res: Response) => {
         .status(400)
         .json({ message: "Invalid credentials", status: 400 });
 
-    const accessToken = generateAccessToken({ id:  String(user._id), role: user.role });
+   
 
     let refreshToken = await redisClient.get(`refresh-token:${user._id}`);
+    let accessToken = await redisClient.get(`access-token:${user._id}`);
+    if (!accessToken) {
+      accessToken = generateAccessToken({ id:  String(user._id), role: user.role });
+      await redisClient.set(`access-token:${user._id}`, accessToken, {
+        EX: 15 * 60,
+      });
+    }
 
     if (!refreshToken) {
       refreshToken = generateRefreshToken({ id:  String(user._id), role: user.role });
@@ -142,4 +154,23 @@ export const refreshToken = async (req: Request, res: Response) => {
 };
 
 
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const redisClient = getRedis();
+    const userId = req.user?.id;
+    if (!userId)
+      return res.status(401).json({ message: "Unauthorized", status: 401 });
 
+    await redisClient.del(`refresh-token:${userId}`);
+    await redisClient.del(`access-token:${userId}`);
+
+    res.json({
+      message: "Logout successful",
+      status: 200,
+    });
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ message: err.message || "Internal server error", status: 500 });
+  }
+};
