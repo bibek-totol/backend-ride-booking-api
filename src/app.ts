@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.json({ limit: '30kb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(mongoSanitize());
+
 
 
 
