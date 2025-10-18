@@ -210,14 +210,6 @@ Tips and troubleshooting
 - If `Ride cannot be accepted or already taken` when accepting a ride, it usually means the ride status changed (accepted/cancelled) or another driver took it — the accept response has been improved to include current ride state to help debug.
 - Make sure Redis is running and the server connects successfully (used for refresh tokens).
 
-Want automation? I can:
-
-- Add Postman Tests to automatically set `accessToken`/`refreshToken` and `rideId`/`userId` from responses.
-- Provide environment files for Postman with dev/prod values.
-
-If you'd like, I can also generate a short step-by-step Postman runbook that registers a rider, requests a ride, registers a driver, accepts the ride and completes it so you can run a full end-to-end scenario with one click.
-
-# Backend-Ride-Booking-API
 
 ## Postman Collection
 
