@@ -30,10 +30,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     const user = await User.findById(decoded.id).select('blocked approved role');
     if (!user) return res.status(404).json({ message: 'User not found', status: 404 });
     if ((user as any).blocked) return res.status(403).json({ message: 'User is blocked', status: 403 });
-    // if ((user as any).role !== 'admin' && !(user as any).approved) {
-    
-    //   return res.status(403).json({ message: 'User not approved', status: 403 });
-    // }
+   
 
     next();
   } catch (err: any) {
@@ -44,12 +41,12 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 export const authorize = (allowedRoles: Role[] = []) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
-    if (!user) return res.status(401).json({ message: 'Unauthorized', status: 401 });
+    if (!user) return res.status(401).json({ message: 'User not found', status: 401 });
 
     if (allowedRoles.length === 0) return next();
 
     if (!allowedRoles.includes(user.role)) {
-      return res.status(403).json({ message: 'Forbidden', status: 403 });
+      return res.status(403).json({ message: `Access denied for ${user.role.toUpperCase()}`, status: 403 });
     }
 
     next();

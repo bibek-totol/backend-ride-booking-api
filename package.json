@@ -23,6 +23,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@types/nodemailer": "^7.0.2",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -33,6 +34,7 @@
     "ioredis": "^5.8.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.0",
+    "nodemailer": "^7.0.9",
     "redis": "^5.8.3",
     "xss-clean": "^0.1.4",
     "zod": "^4.1.11"
