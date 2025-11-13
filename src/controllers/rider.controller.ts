@@ -90,4 +90,32 @@ export const getRide = async (req: Request, res: Response) => {
   }
 };
 
+export const getRideAddress =  async (req: Request, res: Response) => {
+    const rawAddress = req.query.address;
+    const address = typeof rawAddress === 'string'
+      ? rawAddress
+      : Array.isArray(rawAddress) && typeof rawAddress[0] === 'string'
+      ? rawAddress[0]
+      : '';
+
+    if (!address) {
+      return res.status(400).json({ error: 'Missing address query parameter' });
+    }
+
+  const url = `https://nominatim.openstreetmap.org/search?` +
+              `q=${encodeURIComponent(address)}&format=json&limit=1`;
+
+  try {
+    const response = await fetch(url, {
+      headers: { "User-Agent": "YourAppName/1.0" }
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Geo Error:", error);
+    res.status(500).json({ error: "Failed to fetch coordinates" });
+  }
+}
+
 
