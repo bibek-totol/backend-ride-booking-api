@@ -11,7 +11,7 @@ export const acceptRide = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized', status: 401 });
     }
 
-    const { id: rideId } = req.params;
+    const  rideId  = req.params.id;
 
     
     if (!Types.ObjectId.isValid(rideId)) {
@@ -24,7 +24,7 @@ export const acceptRide = async (req: Request, res: Response) => {
    
 
     const updatedRide = await Ride.findOneAndUpdate(
-      { rider: rideObjectId, status: 'requested' },
+      { _id: rideObjectId, status: 'requested' },
       {
         $set: {
           status: 'accepted',
@@ -56,7 +56,7 @@ export const rejectRide = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized', status: 401 });
     }
 
-    const { id: rideId } = req.params;
+    const  rideId   = req.params.id;
 
     
     if (!Types.ObjectId.isValid(rideId)) {
@@ -68,10 +68,11 @@ export const rejectRide = async (req: Request, res: Response) => {
 
    
     const updatedRide = await Ride.findOneAndUpdate(
-      { rider: rideObjectId, status: 'requested' },
+      { _id: rideObjectId, status: 'requested' },
       {
         $set: {
           status: 'rejected',
+          driver: driverObjectId,
         },
         $push: {
           history: { status: 'rejected', at: new Date(), by: driverObjectId },
