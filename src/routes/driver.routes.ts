@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import authMiddleware from '../middleware/auth.middleware';
-import { acceptRide, getEarningsHistory, rejectRide, setAvailability, updateRideStatus } from '../controllers/driver.controller';
+import { acceptRide, getAllRides, getEarningsHistory, rejectRide, setAvailability, updateRideStatus } from '../controllers/driver.controller';
 
 const router = Router();
 
@@ -20,6 +20,8 @@ router.post('/availability', authenticate, authorize(['driver']), setAvailabilit
 
 
 router.get('/earnings', authenticate, authorize(['driver']), getEarningsHistory);
+
+router.get('/rides', authenticate, authorize(['driver']), getAllRides);
 
 export default router;
 

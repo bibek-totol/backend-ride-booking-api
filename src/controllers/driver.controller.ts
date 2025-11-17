@@ -156,3 +156,22 @@ export const getEarningsHistory = async (req: Request, res: Response) => {
 };
 
 
+
+export const getAllRides = async (req: Request, res: Response) => {
+  try {
+    const rides = await Ride.find().sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      rides,
+      message: "All rides fetched successfully",
+      status: 200,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      message: err.message || "Invalid request",
+      status: 400,
+    });
+  }
+};
+// I want rider information from User Model when fetching all rides
+

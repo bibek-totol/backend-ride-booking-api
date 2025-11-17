@@ -111,6 +111,7 @@ export const getRideAddress =  async (req: Request, res: Response) => {
     });
 
     const data = await response.json();
+
     res.json(data);
   } catch (error) {
     console.error("Geo Error:", error);
