@@ -11,6 +11,8 @@ password: string;
 role: Role;
 blocked: boolean;
 approved: boolean;
+passwordResetOtp?: string;
+passwordResetOtpExpires?: Date;
 }
 
 
@@ -20,7 +22,9 @@ email: { type: String, required: true, unique: true, lowercase: true },
 password: { type: String, required: true },
 role: { type: String, enum: ['admin','rider','driver'], default: 'rider' },
 blocked: { type: Boolean, default: false },
-approved: { type: Boolean, default: false }
+approved: { type: Boolean, default: false },
+passwordResetOtp: { type: String },
+    passwordResetOtpExpires: { type: Date }
 }, { timestamps: true });
 
 
