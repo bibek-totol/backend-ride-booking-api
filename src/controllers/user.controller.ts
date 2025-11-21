@@ -4,6 +4,7 @@ import Ride from '../models/ride.model';
 import { Types } from 'mongoose';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcrypt';
+import axios from "axios";
 
 export const getProfile = async (req: Request, res: Response) => {
   try {
@@ -22,6 +23,45 @@ export const getProfile = async (req: Request, res: Response) => {
 
 
 
+
+export const reverseGeocode = async (req: Request, res: Response) => {
+  try {
+
+    
+    const { lat, lng } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ message: "Lat & Lng required" });
+    }
+
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+
+    const response = await axios.get(url, {
+      headers: { "User-Agent": "RideApp/1.0" },
+    });
+     
+    console.log("Geocode Response:", response.data);
+    return res.json({
+      address: response.data.display_name || "Unknown location",
+    });
+  } catch (error) {
+    return res.json({ address: "Unknown location" });
+  }
+};
+
+
+
+export const getAcceptedRides = async (req: Request, res: Response) => {
+  try {
+    
+
+    const rides = await Ride.find({ status: 'accepted' }).populate('rider', 'name email').populate('driver', 'name email');
+    res.json({ rides, status: 200, message: 'Accepted rides fetched' });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
+  }
+};
+
 export const getUserById = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -38,6 +78,10 @@ export const getUserById = async (req: Request, res: Response) => {
     res.status(400).json({ message: err.message || "Invalid request", status: 400 });
   }
 };
+
+
+
+
 
 
 

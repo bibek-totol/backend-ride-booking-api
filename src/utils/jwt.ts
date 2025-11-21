@@ -3,7 +3,7 @@ import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
 const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET || "access_secret";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_SECRET || "refresh_secret";
 
-const ACCESS_TOKEN_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES || "120m";
+const ACCESS_TOKEN_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES || "240m";
 const REFRESH_TOKEN_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES || "2d";
 
 interface TokenPayload {

@@ -4,48 +4,53 @@ import Earning from '../models/earning.model';
 import { Types } from 'mongoose';
 
 
+
 export const acceptRide = async (req: Request, res: Response) => {
   try {
     const driverId = req.user?.id;
-    if (!driverId) {
-      return res.status(401).json({ message: 'Unauthorized', status: 401 });
+    if (!driverId) return res.status(401).json({ message: "Unauthorized", status: 401 });
+
+    const rideId = req.params.id;
+    const { lat, lng, address } = req.body.driverLocation || {};
+
+    if (!lat || !lng) {
+      return res.status(400).json({ message: "Driver location required", status: 400 });
     }
-
-    const  rideId  = req.params.id;
-
-    
-    if (!Types.ObjectId.isValid(rideId)) {
-      return res.status(400).json({ message: 'Invalid ride ID format', status: 400 });
-    }
-
-    const rideObjectId = new Types.ObjectId(rideId);
-    const driverObjectId = new Types.ObjectId(driverId);
-
-   
 
     const updatedRide = await Ride.findOneAndUpdate(
-      { _id: rideObjectId, status: 'requested' },
+      { _id: rideId },
       {
         $set: {
-          status: 'accepted',
-          driver: driverObjectId,
+          status: "accepted",
+          driver: driverId,
+          driverLocation: { lat, lng, address },
         },
         $push: {
-          history: { status: 'accepted', at: new Date(), by: driverObjectId },
+          history: {
+            status: "accepted",
+            at: new Date(),
+            by: driverId,
+          },
         },
       },
       { new: true }
     );
 
     if (!updatedRide) {
-      return res.status(400).json({ message: 'Ride cannot be accepted or already taken', status: 400 });
+      return res.status(400).json({ message: "Ride cannot be accepted", status: 400 });
     }
 
-    return res.status(200).json({ ride: updatedRide, message: 'Ride accepted', status: 200 });
+    return res.status(200).json({
+      ride: updatedRide,
+      message: "Ride accepted",
+      status: 200,
+    });
+
   } catch (err: any) {
-    return res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
+    return res.status(400).json({ message: err.message });
   }
 };
+
 
 
 
@@ -68,7 +73,7 @@ export const rejectRide = async (req: Request, res: Response) => {
 
    
     const updatedRide = await Ride.findOneAndUpdate(
-      { _id: rideObjectId, status: 'requested' },
+      { _id: rideObjectId },
       {
         $set: {
           status: 'rejected',

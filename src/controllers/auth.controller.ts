@@ -100,7 +100,7 @@ export const register = async (req: Request, res: Response) => {
     });
 
     await redisClient.set(`access-token:${user._id}`, accessToken, {
-      EX: 120 * 60,
+      EX: 240 * 60,
     });
 
     res.status(201).json({
@@ -147,9 +147,13 @@ export const login = async (req: Request, res: Response) => {
         role: user.role,
       });
       await redisClient.set(`access-token:${user._id}`, accessToken, {
-        EX: 120 * 60,
+        EX: 240 * 60,
       });
     }
+
+    console.log({ accessToken, refreshToken });
+
+
 
     if (!refreshToken) {
       refreshToken = generateRefreshToken({
@@ -212,7 +216,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     if (!accessToken) {
       accessToken = generateAccessToken({ id: decoded.id, role: decoded.role });
       await redisClient.set(`access-token:${decoded.id}`, accessToken, {
-        EX: 120 * 60,
+        EX: 240 * 60,
       });
     }
 
