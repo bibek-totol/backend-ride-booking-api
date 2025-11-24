@@ -151,7 +151,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    console.log({ accessToken, refreshToken });
+  
 
 
 
@@ -184,6 +184,28 @@ export const login = async (req: Request, res: Response) => {
       .json({ message: err.message || "Invalid data", status: 400 });
   }
 };
+
+
+
+export const googleCallback = async (req: any, res: Response) => {
+  const user = req.user;
+  const role = req.session.role || "rider";
+  user.role = role;
+  await user.save();
+
+  const accessToken = generateAccessToken({ id: user._id, role: user.role });
+  const refreshToken = generateRefreshToken({ id: user._id, role: user.role });
+
+  const redis = getRedis();
+  await redis.set(`refresh-token:${user._id}`, refreshToken, { EX: 2 * 24 * 60 * 60 });
+
+  
+  res.redirect(
+  `${process.env.FRONTEND_URL}/oauth-success?accessToken=${accessToken}&refreshToken=${refreshToken}&role=${user.role}`
+);
+
+};
+
 
 export const refreshToken = async (req: Request, res: Response) => {
   const { refreshtoken } = req.body;

@@ -3,7 +3,9 @@ import cors from 'cors';
 import routes from './routes';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-
+import session from "express-session";
+import passport from "passport";
+import "./middleware/passport.middleware";
 
 
 
@@ -27,9 +29,22 @@ const limiter = rateLimit({
 });
 
 
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, 
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use('/api', limiter);
 app.use('/api', routes);
+
+
 
 
 
