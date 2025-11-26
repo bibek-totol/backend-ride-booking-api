@@ -149,17 +149,17 @@ export const setAvailability = async (req: Request, res: Response) => {
 	}
 };
 
-export const getEarningsHistory = async (req: Request, res: Response) => {
-	try {
-		const driverId = req.user?.id;
-		if (!driverId) return res.status(401).json({ message: 'Unauthorized', status: 401 });
+// export const getEarningsHistory = async (req: Request, res: Response) => {
+// 	try {
+// 		const driverId = req.user?.id;
+// 		if (!driverId) return res.status(401).json({ message: 'Unauthorized', status: 401 });
 
-		const earnings = await Earning.find({ driver: driverId }).sort({ createdAt: -1 });
-		res.json({ earnings, status: 200 });
-	} catch (err: any) {
-		res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
-	}
-};
+// 		const earnings = await Earning.find({ driver: driverId }).sort({ createdAt: -1 });
+// 		res.json({ earnings, status: 200 });
+// 	} catch (err: any) {
+// 		res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
+// 	}
+// };
 
 
 
@@ -179,5 +179,31 @@ export const getAllRides = async (req: Request, res: Response) => {
     });
   }
 };
-// I want rider information from User Model when fetching all rides
+
+
+
+export const getDriverEarnings = async (req: Request, res: Response) => {
+  try {
+    const driverId = req.user?.id;
+    if (!driverId) return res.status(401).json({ message: "Unauthorized" });
+
+    
+    const rides = await Ride.find({ driver: driverId, status: "accepted" });
+
+    const totalRides = rides.length;
+    const totalEarnings = rides.reduce((sum, ride) => sum + (ride.price || 0), 0);
+    const averageFare = totalRides > 0 ? totalEarnings / totalRides : 0;
+
+    return res.status(200).json({
+      totalRides,
+      totalEarnings: Math.round(totalEarnings),
+      averageFare: Math.round(averageFare),
+      status: 200,
+    });
+
+  } catch (err: any) {
+    return res.status(400).json({ message: err.message });
+  }
+};
+
 

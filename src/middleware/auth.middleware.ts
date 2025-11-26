@@ -43,6 +43,8 @@ export const authorize = (allowedRoles: Role[] = []) => {
     const user = req.user;
     if (!user) return res.status(401).json({ message: 'User not found', status: 401 });
 
+     if (user.role === "admin") return next();
+
     if (allowedRoles.length === 0) return next();
 
     if (!allowedRoles.includes(user.role)) {

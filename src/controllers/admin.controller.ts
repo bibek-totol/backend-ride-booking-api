@@ -253,3 +253,29 @@ export const generateReport = async (req: Request, res: Response) => {
     return sendError(res, err, 'Could not generate report');
   }
 };
+
+
+export const getAllDriverEarnings = async (req: Request, res: Response) => {
+  try {
+    const driverId = req.params.id; 
+    
+    if (!driverId) return res.status(400).json({ message: "Driver ID required" });
+
+    const rides = await Ride.find({ driver: driverId, status: "accepted" });
+
+    const totalRides = rides.length;
+    const totalEarnings = rides.reduce((sum, ride) => sum + (ride.price || 0), 0);
+    const averageFare = totalRides > 0 ? totalEarnings / totalRides : 0;
+
+    return res.status(200).json({
+      totalRides,
+      totalEarnings: Math.round(totalEarnings),
+      averageFare: Math.round(averageFare),
+      status: 200,
+    });
+
+  } catch (err: any) {
+    return res.status(400).json({ message: err.message });
+  }
+};
+
