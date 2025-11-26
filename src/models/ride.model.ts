@@ -18,8 +18,8 @@ driver?: Types.ObjectId | null;
 driverLocation?: { lat: number; lng: number, address?: string };
 pickup: { lat: number; lng: number; address?: string };
 destination: { lat: number; lng: number; address?: string };
+price?: number;
 status: RideStatus;
-fare?: number;
 history: IRideHistory[];
 cancelledAt?: Date;
 }
@@ -39,8 +39,8 @@ driver: { type: Schema.Types.ObjectId, ref: 'User', default: null },
 driverLocation: { lat: Number, lng: Number, address: String },
 pickup: { lat: Number, lng: Number, address: String },
 destination: { lat: Number, lng: Number, address: String },
+price: Number,
 status: { type: String, default: 'requested' },
-fare: Number,
 history: [rideHistorySchema],
 cancelledAt: Date
 }, { timestamps: true });

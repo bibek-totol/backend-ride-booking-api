@@ -133,7 +133,7 @@ export const login = async (req: Request, res: Response) => {
         .status(404)
         .json({ message: "Currently No User Found", status: 404 });
 
-    const match = await comparePassword(data.password, user.password);
+    const match = await comparePassword(data.password, user.password as string);
     if (!match)
       return res
         .status(400)

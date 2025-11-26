@@ -16,6 +16,7 @@ export const requestRide = async (req: Request, res: Response) => {
       rider: new Types.ObjectId(riderId),
       pickup: data.pickup,
       destination: data.destination,
+      price: data.price,
       status: 'requested',
       history: [{ status: 'requested', at: new Date(), by: new Types.ObjectId(riderId) }]
     } as Partial<IRide>);

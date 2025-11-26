@@ -17,7 +17,8 @@ password: z.string().min(6)
 
 export const requestRideSchema = z.object({
 pickup: z.object({ lat: z.number(), lng: z.number(), address: z.string().optional() }),
-destination: z.object({ lat: z.number(), lng: z.number(), address: z.string().optional() })
+destination: z.object({ lat: z.number(), lng: z.number(), address: z.string().optional() }),
+ price: z.number(),
 });
 
 
