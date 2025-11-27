@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import User, { Role } from '../models/user.model';
 import Ride from '../models/ride.model';
 import { Types } from 'mongoose';
+import DriverAdditional from '../models/DriverAdditional';
+
 
 
 const sendError = (res: Response, err: any, fallback: string) => {
@@ -23,6 +25,26 @@ const isProtectedUser = (reqUserId: string, targetUser: any) => {
 
   return null;
 };
+
+
+
+export const getAllDriversAdditional = async (req: Request, res: Response) => {
+  try {
+  
+    const drivers = await DriverAdditional.find({}).populate("user", "name email");;
+
+    if (!drivers || drivers.length === 0) {
+      return res.status(404).json({ success: false, message: "No driver info found" });
+    }
+
+    return res.status(200).json({ success: true, data: drivers });
+  } catch (error) {
+    console.error("Error fetching drivers info:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
 
 
 export const listUsers = async (req: Request, res: Response) => {

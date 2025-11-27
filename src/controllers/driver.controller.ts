@@ -2,6 +2,64 @@ import { Request, Response } from 'express';
 import Ride from '../models/ride.model';
 import Earning from '../models/earning.model';
 import { Types } from 'mongoose';
+import DriverAdditional from '../models/DriverAdditional';
+import fs from "fs";
+import cloudinary from "../config/cloudinary.js";
+
+
+
+export const saveDriverInfo = async (req: Request, res: Response) => {
+  try {
+    
+    const userId = req.user?.id; 
+    const role = req.user?.role; 
+
+    if (!userId || !role) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const existing = await DriverAdditional.findOne({ user: userId });
+    if (existing) {
+      return res.status(400).json({
+        error: "You have already submitted your information. Please wait for verification.",
+      });
+    }
+
+    const { phone, address, nid, license, vehicleRegNo, vehicleType, vehicleModel, experience } = req.body;
+
+    const licenseUpload = await cloudinary.uploader.upload(req.files.licenseImg[0].path, {
+      folder: "driver_docs/license",
+    });
+
+    
+    const regCertUpload = await cloudinary.uploader.upload(req.files.regCertImg[0].path, {
+      folder: "driver_docs/reg_cert",
+    });
+
+    
+    fs.unlinkSync(req.files.licenseImg[0].path);
+    fs.unlinkSync(req.files.regCertImg[0].path);
+
+    const newInfo = await DriverAdditional.create({
+      user: userId,
+      role,
+      phone,
+      address,
+      nid,
+      license,
+      vehicleRegNo,
+      vehicleType,
+      vehicleModel,
+      experience,
+      licenseImg: licenseUpload.secure_url,
+      regCertImg: regCertUpload.secure_url,
+    });
+
+    return res.json({ message: "Driver info submitted", data: newInfo });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
 
 
 

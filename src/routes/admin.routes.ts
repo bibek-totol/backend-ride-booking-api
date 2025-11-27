@@ -11,7 +11,10 @@ import {
   unblockUser,
   generateReport,
   getAllDriverEarnings,
+  getAllDriversAdditional,
+
 } from "../controllers/admin.controller";
+
 
 const router = Router();
 
@@ -30,5 +33,9 @@ router.post("/users/:id/unblock", unblockUser);
 router.get("/reports", generateReport);
 
 router.get("/drivers/:id/earnings", getAllDriverEarnings);
+
+router.get("/drivers/additional", getAllDriversAdditional);
+
+
 
 export default router;

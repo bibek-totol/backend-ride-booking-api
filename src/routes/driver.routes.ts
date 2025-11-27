@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import authMiddleware from '../middleware/auth.middleware';
 import {checkApproval} from '../middleware/checkApproval.middleware';
-import { acceptRide, getAllRides, getDriverEarnings, rejectRide, setAvailability, updateRideStatus } from '../controllers/driver.controller';
+import { acceptRide, getAllRides, getDriverEarnings, rejectRide, saveDriverInfo, setAvailability, updateRideStatus } from '../controllers/driver.controller';
+import { upload } from "../middleware/multer";
+
 
 const router = Router();
 
@@ -24,7 +26,14 @@ router.get('/earnings', authenticate, authorize(['driver']),checkApproval, getDr
 
 router.get('/rides', authenticate, authorize(['driver']),checkApproval, getAllRides);
 
-
+router.post(
+  "/additional-info",authenticate,authorize(['driver']),
+  upload.fields([
+    { name: "licenseImg", maxCount: 1 },
+    { name: "regCertImg", maxCount: 1 }
+  ]),
+  saveDriverInfo
+);
 
 
 export default router;
