@@ -19,7 +19,18 @@ export const requestRideSchema = z.object({
 pickup: z.object({ lat: z.number(), lng: z.number(), address: z.string().optional() }),
 destination: z.object({ lat: z.number(), lng: z.number(), address: z.string().optional() }),
  price: z.number(),
+ payment: z.object({
+    method: z.string().optional(),
+   paymentIntentId: z.string().optional(),
+   amount: z.number().optional(),
+
+ }),
+ riderName: z.string().optional(),
+ riderEmail: z.string().optional(),
 });
+
+
+
 
 
 export const updateRideStatusSchema = z.object({

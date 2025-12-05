@@ -19,6 +19,10 @@ driverLocation?: { lat: number; lng: number, address?: string };
 pickup: { lat: number; lng: number; address?: string };
 destination: { lat: number; lng: number; address?: string };
 price?: number;
+paymentIntentId?: string;
+paymentMethod: string;
+riderName: string;
+riderEmail: string;
 status: RideStatus;
 history: IRideHistory[];
 cancelledAt?: Date;
@@ -40,10 +44,18 @@ driverLocation: { lat: Number, lng: Number, address: String },
 pickup: { lat: Number, lng: Number, address: String },
 destination: { lat: Number, lng: Number, address: String },
 price: Number,
+paymentIntentId: String,
+paymentMethod: String,
+riderName: String,
+riderEmail: String,
 status: { type: String, default: 'requested' },
 history: [rideHistorySchema],
 cancelledAt: Date
 }, { timestamps: true });
+
+
+
+
 
 
 export default model<IRide>('Ride', rideSchema);

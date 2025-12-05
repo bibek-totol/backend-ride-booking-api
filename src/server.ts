@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-import app from "./app";
+import app, { server } from "./app";
 import connectDB from "./config/db";
 import { initRedis } from "./config/redis";
 
@@ -13,7 +13,9 @@ const start = async () => {
       console.error("Redis connection error:", err);
       process.exit(1);
     });
-    app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+   server.listen(PORT, () => {
+  console.log(`Server running with sockets on port ${PORT}`);
+});
   } catch (err) {
     console.error("Startup error", err);
     process.exit(1);

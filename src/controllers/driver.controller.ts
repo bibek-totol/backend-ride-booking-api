@@ -4,7 +4,7 @@ import Earning from '../models/earning.model';
 import { Types } from 'mongoose';
 import DriverAdditional from '../models/DriverAdditional';
 import fs from "fs";
-import cloudinary from "../config/cloudinary.js";
+import cloudinary from "../config/cloudinary";
 
 
 
@@ -178,7 +178,7 @@ export const updateRideStatus = async (req: Request, res: Response) => {
 		
 		if (status === 'completed') {
 			
-			const amount = ride.fare ?? 0;
+			const amount = ride.price ?? 0;
 			const earning = await Earning.create({ driver: new Types.ObjectId(driverId), ride: ride._id, amount, description: 'Ride fare' });
 	
 			await ride.save();

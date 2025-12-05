@@ -2,23 +2,39 @@ import { Request, Response } from 'express';
 import Ride, { IRide } from '../models/ride.model';
 import { requestRideSchema } from '../validation/schemas';
 import { Types } from 'mongoose';
-
-
+import Stripe from 'stripe';
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {}); 
 
 export const requestRide = async (req: Request, res: Response) => {
   try {
     const data = requestRideSchema.parse(req.body);
 
     const riderId = req.user?.id;
-    if (!riderId) return res.status(401).json({ message: 'Unauthorized', status: 401 });
+    if (!riderId)
+      return res.status(401).json({ message: 'Unauthorized', status: 401 });
 
     const ride = await Ride.create({
       rider: new Types.ObjectId(riderId),
       pickup: data.pickup,
       destination: data.destination,
       price: data.price,
+
+      paymentIntentId: data.payment.paymentIntentId? data.payment.paymentIntentId : "N/A",
+      paymentMethod: data.payment.paymentIntentId
+        ? "Online Payment"
+        : "Cash Payment",
+
+        riderName: data.riderName,
+        riderEmail: data.riderEmail,
+
       status: 'requested',
-      history: [{ status: 'requested', at: new Date(), by: new Types.ObjectId(riderId) }]
+      history: [
+        {
+          status: 'requested',
+          at: new Date(),
+          by: new Types.ObjectId(riderId),
+        },
+      ],
     } as Partial<IRide>);
 
     res.status(201).json({ ride, message: 'Ride requested', status: 201 });
@@ -26,6 +42,7 @@ export const requestRide = async (req: Request, res: Response) => {
     res.status(400).json({ message: err.message || 'Invalid data', status: 400 });
   }
 };
+
 
 export const cancelRide = async (req: Request, res: Response) => {
   try {
@@ -119,5 +136,32 @@ export const getRideAddress =  async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch coordinates" });
   }
 }
+
+
+export const createPaymentIntent = async (req: Request, res: Response) => {
+  try {
+    const { amount } = req.body;
+    if (!amount) return res.status(400).json({ message: 'Amount is required', status: 400 });
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'usd',
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+
+    // res.json({ clientSecret: paymentIntent.client_secret });
+
+    res.json({
+      data: {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+      },
+    });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
+  }
+};
 
 
