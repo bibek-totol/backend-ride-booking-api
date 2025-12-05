@@ -3,7 +3,7 @@ import User, { Role } from '../models/user.model';
 import Ride from '../models/ride.model';
 import { Types } from 'mongoose';
 import DriverAdditional from '../models/DriverAdditional';
-
+import nodemailer from 'nodemailer';
 
 
 const sendError = (res: Response, err: any, fallback: string) => {
@@ -103,6 +103,33 @@ export const listRides = async (req: Request, res: Response) => {
 };
 
 
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+
+transporter.verify((err, success) => {
+  if (err) console.log('SMTP Error:', err);
+  else console.log('SMTP Connected');
+});
+
+// Helper to send email
+const sendDriverEmail = async (email: string, subject: string, text: string) => {
+  await transporter.sendMail({
+    from: `"Your App" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject,
+    text,
+  });
+};
+
+// Approve driver
 export const approveDriver = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -119,9 +146,16 @@ export const approveDriver = async (req: Request, res: Response) => {
     driver.approved = true;
     await driver.save();
 
+    // Send approval email
+    await sendDriverEmail(
+      driver.email,
+      'Driver Account Approved',
+      `Hello ${driver.name},\n\nYour driver account has been approved. You can now start accepting rides.\n\nBest regards,\nYour App Team`
+    );
+
     return res.json({
       status: 200,
-      message: 'Driver approved',
+      message: 'Driver approved and email sent',
       driver: {
         id: driver._id,
         name: driver.name,
@@ -151,9 +185,16 @@ export const suspendDriver = async (req: Request, res: Response) => {
     driver.approved = false;
     await driver.save();
 
+    // Send suspension email
+    await sendDriverEmail(
+      driver.email,
+      'Driver Account Suspended',
+      `Hello ${driver.name},\n\nYour driver account has been suspended. You will not be able to accept rides until it is reinstated.\n\nBest regards,\nYour App Team`
+    );
+
     return res.json({
       status: 200,
-      message: 'Driver suspended',
+      message: 'Driver suspended and email sent',
       driver: {
         id: driver._id,
         name: driver.name,
