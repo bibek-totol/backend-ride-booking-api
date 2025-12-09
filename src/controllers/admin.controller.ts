@@ -213,10 +213,10 @@ export const blockUser = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     if (!Types.ObjectId.isValid(id))
-      return res.status(400).json({ status: 400, message: 'Invalid ID' });
+      return res.status(400).json({ status: 400, message: "Invalid ID" });
 
     const user = await User.findById(id);
-    if (!user) return res.status(404).json({ status: 404, message: 'User not found' });
+    if (!user) return res.status(404).json({ status: 404, message: "User not found" });
 
     const protectionMsg = isProtectedUser(req.user!.id, user);
     if (protectionMsg) return res.status(403).json({ status: 403, message: protectionMsg });
@@ -224,9 +224,16 @@ export const blockUser = async (req: Request, res: Response) => {
     user.blocked = true;
     await user.save();
 
+    // Send BLOCK notification email
+    await sendDriverEmail(
+      user.email,
+      "Your Account Has Been Blocked",
+      `Hello ${user.name},\n\nYour account has been blocked due to violation or admin action. Please contact support if you believe this is a mistake.\n\nBest regards,\nYour App Team`
+    );
+
     return res.json({
       status: 200,
-      message: 'User blocked successfully',
+      message: "User blocked successfully and email sent",
       user: {
         id: user._id,
         name: user.name,
@@ -235,9 +242,10 @@ export const blockUser = async (req: Request, res: Response) => {
       },
     });
   } catch (err) {
-    return sendError(res, err, 'Could not block user');
+    return sendError(res, err, "Could not block user");
   }
 };
+
 
 
 export const unblockUser = async (req: Request, res: Response) => {
@@ -245,10 +253,10 @@ export const unblockUser = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     if (!Types.ObjectId.isValid(id))
-      return res.status(400).json({ status: 400, message: 'Invalid ID' });
+      return res.status(400).json({ status: 400, message: "Invalid ID" });
 
     const user = await User.findById(id);
-    if (!user) return res.status(404).json({ status: 404, message: 'User not found' });
+    if (!user) return res.status(404).json({ status: 404, message: "User not found" });
 
     const protectionMsg = isProtectedUser(req.user!.id, user);
     if (protectionMsg) return res.status(403).json({ status: 403, message: protectionMsg });
@@ -256,9 +264,16 @@ export const unblockUser = async (req: Request, res: Response) => {
     user.blocked = false;
     await user.save();
 
+    // Send UNBLOCK email
+    await sendDriverEmail(
+      user.email,
+      "Your Account Has Been Unblocked",
+      `Hello ${user.name},\n\nGood news! Your account has been unblocked and restored. You can now log in and continue using our services.\n\nBest regards,\nYour App Team`
+    );
+
     return res.json({
       status: 200,
-      message: 'User unblocked successfully',
+      message: "User unblocked successfully and email sent",
       user: {
         id: user._id,
         name: user.name,
@@ -267,9 +282,10 @@ export const unblockUser = async (req: Request, res: Response) => {
       },
     });
   } catch (err) {
-    return sendError(res, err, 'Could not unblock user');
+    return sendError(res, err, "Could not unblock user");
   }
 };
+
 
 
 
