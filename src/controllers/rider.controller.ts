@@ -140,18 +140,17 @@ export const getRideAddress =  async (req: Request, res: Response) => {
 
 export const createPaymentIntent = async (req: Request, res: Response) => {
   try {
-    const { amount } = req.body;
-    if (!amount) return res.status(400).json({ message: 'Amount is required', status: 400 });
+    let { amount } = req.body;
+    if (!amount) return res.status(400).json({ message: "Amount is required" });
+
+    // FIX: convert to cents
+    amount = Math.round(Number(amount) * 100);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
-      currency: 'usd',
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      currency: "usd",
+      automatic_payment_methods: { enabled: true },
     });
-
-    // res.json({ clientSecret: paymentIntent.client_secret });
 
     res.json({
       data: {
@@ -160,8 +159,9 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
-    res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
+    res.status(400).json({ message: err.message || "Invalid request" });
   }
 };
+
 
 

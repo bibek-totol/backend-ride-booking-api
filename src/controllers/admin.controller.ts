@@ -272,6 +272,38 @@ export const unblockUser = async (req: Request, res: Response) => {
 };
 
 
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!Types.ObjectId.isValid(id))
+      return res.status(400).json({ status: 400, message: 'Invalid ID' });
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ status: 404, message: 'User not found' });
+
+    const protectionMsg = isProtectedUser(req.user!.id, user);
+    if (protectionMsg) return res.status(403).json({ status: 403, message: protectionMsg });
+
+    await user.deleteOne();
+
+    return res.json({
+      status: 200,
+      message: 'User deleted successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        blocked: user.blocked,
+      },
+    });
+  } catch (err) {
+    return sendError(res, err, 'Could not delete user');
+  }
+};
+
+
 export const generateReport = async (req: Request, res: Response) => {
   try {
     const { from, to } = req.query as any;

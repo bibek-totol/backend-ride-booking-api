@@ -12,6 +12,7 @@ import {
   generateReport,
   getAllDriverEarnings,
   getAllDriversAdditional,
+  deleteUser,
 
 } from "../controllers/admin.controller";
 
@@ -29,6 +30,7 @@ router.post("/drivers/:id/suspend", suspendDriver);
 
 router.post("/users/:id/block", blockUser);
 router.post("/users/:id/unblock", unblockUser);
+router.delete("/users/:id/delete", deleteUser);
 
 router.get("/reports", generateReport);
 
