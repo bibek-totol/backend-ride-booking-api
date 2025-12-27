@@ -17,15 +17,15 @@ import { sendVerificationEmail } from "../utils/email";
 
 
 
-const verifyAdminCode = async (code:any, email:any) => {
-  
-    const redisClient = getRedis();
-    const storedCode = await redisClient.get(`admin-code:${email}`);
-    if (!storedCode || storedCode !== code) {
-      return false;
-    }
-    return true;
-  
+const verifyAdminCode = async (code: any, email: any) => {
+
+  const redisClient = getRedis();
+  const storedCode = await redisClient.get(`admin-code:${email}`);
+  if (!storedCode || storedCode !== code) {
+    return false;
+  }
+  return true;
+
 };
 
 
@@ -46,19 +46,19 @@ export const register = async (req: Request, res: Response) => {
     let roleToAssign;
     const totalUsers = await User.countDocuments();
     if (totalUsers === 0 && data.email === process.env.VERIFICATION_RECEIVER_EMAIL as string) {
-       const code = crypto.randomInt(100000, 999999).toString();
-        await redisClient.set(`admin-code:${data.email}`, code, { EX: 10 * 60 }); 
-        await sendVerificationEmail(code);
+      const code = crypto.randomInt(100000, 999999).toString();
+      await redisClient.set(`admin-code:${data.email}`, code, { EX: 10 * 60 });
+      await sendVerificationEmail(code);
 
-        const isVerified = verifyAdminCode(code,data.email);
-        if (!isVerified) {
-          return res
-            .status(400)
-            .json({ message: "Admin code verification failed", status: 400 });
-        }
+      const isVerified = verifyAdminCode(code, data.email);
+      if (!isVerified) {
+        return res
+          .status(400)
+          .json({ message: "Admin code verification failed", status: 400 });
+      }
 
-        roleToAssign = "admin";
-        await redisClient.del(`admin-code:${data.email}`);
+      roleToAssign = "admin";
+      await redisClient.del(`admin-code:${data.email}`);
 
     } else {
       if (data.role === "admin") {
@@ -153,7 +153,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-  
+
 
 
 
@@ -192,23 +192,50 @@ export const login = async (req: Request, res: Response) => {
 
 
 export const googleCallback = async (req: any, res: Response) => {
-  const user = req.user;
-  const role = req.session.role || "rider";
-  user.role = role;
-  await user.save();
+  try {
+    const user = req.user;
 
-  const accessToken = generateAccessToken({ id: user._id, role: user.role });
-  const refreshToken = generateRefreshToken({ id: user._id, role: user.role });
+    if (!user) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login`);
+    }
 
-  const redis = getRedis();
-  await redis.set(`refresh-token:${user._id}`, refreshToken, { EX: 2 * 24 * 60 * 60 });
+    const role = req.session.role || "rider";
+    user.role = role;
+    await user.save();
 
-  
-  res.redirect(
-  `${process.env.FRONTEND_URL}/oauth-success?accessToken=${accessToken}&refreshToken=${refreshToken}&role=${user.role}`
-);
+    const userId = String(user._id);
 
+    const accessToken = generateAccessToken({ id: userId, role: user.role });
+    const refreshToken = generateRefreshToken({ id: userId, role: user.role });
+
+    const redis = getRedis();
+    await redis.set(`refresh-token:${userId}`, refreshToken, { EX: 2 * 24 * 60 * 60 });
+    await redis.set(`access-token:${userId}`, accessToken, { EX: 240 * 60 });
+
+    
+    const userPayload = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      approved: user.approved,
+      blocked: user.blocked,
+    };
+
+    const redirectUrl =
+      `${process.env.FRONTEND_URL}/oauth-success` +
+      `?accessToken=${accessToken}` +
+      `&refreshToken=${refreshToken}` +
+      `&user=${encodeURIComponent(JSON.stringify(userPayload))}`;
+
+    res.redirect(redirectUrl);
+
+  } catch (error) {
+    console.error(error);
+    res.redirect(`${process.env.FRONTEND_URL}/login`);
+  }
 };
+
 
 
 export const refreshToken = async (req: Request, res: Response) => {
