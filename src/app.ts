@@ -49,5 +49,13 @@ const server = http.createServer(app);
 initSocket(server);
 
 app.use('/api', routes);
+app.get('/', (req, res) => {
+   
+  res.send("Welcome to Ride Booking Server")
+
+
+
+})
+
 
 export { app, server };   
