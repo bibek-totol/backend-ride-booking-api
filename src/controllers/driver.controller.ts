@@ -10,9 +10,9 @@ import cloudinary from "../config/cloudinary";
 
 export const saveDriverInfo = async (req: Request, res: Response) => {
   try {
-    
-    const userId = req.user?.id; 
-    const role = req.user?.role; 
+
+    const userId = req.user?.id;
+    const role = req.user?.role;
 
     if (!userId || !role) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -27,18 +27,24 @@ export const saveDriverInfo = async (req: Request, res: Response) => {
 
     const { phone, address, nid, license, vehicleRegNo, vehicleType, vehicleModel, experience } = req.body;
 
-    const licenseUpload = await cloudinary.uploader.upload(req.files.licenseImg[0].path, {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+    if (!files || !files.licenseImg || !files.regCertImg) {
+      return res.status(400).json({ error: "Required images are missing" });
+    }
+
+    const licenseUpload = await cloudinary.uploader.upload(files.licenseImg[0].path, {
       folder: "driver_docs/license",
     });
 
-    
-    const regCertUpload = await cloudinary.uploader.upload(req.files.regCertImg[0].path, {
+
+    const regCertUpload = await cloudinary.uploader.upload(files.regCertImg[0].path, {
       folder: "driver_docs/reg_cert",
     });
 
-    
-    fs.unlinkSync(req.files.licenseImg[0].path);
-    fs.unlinkSync(req.files.regCertImg[0].path);
+
+    fs.unlinkSync(files.licenseImg[0].path);
+    fs.unlinkSync(files.regCertImg[0].path);
 
     const newInfo = await DriverAdditional.create({
       user: userId,
@@ -119,9 +125,9 @@ export const rejectRide = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized', status: 401 });
     }
 
-    const  rideId   = req.params.id;
+    const rideId = req.params.id;
 
-    
+
     if (!Types.ObjectId.isValid(rideId)) {
       return res.status(400).json({ message: 'Invalid ride ID format', status: 400 });
     }
@@ -129,7 +135,7 @@ export const rejectRide = async (req: Request, res: Response) => {
     const rideObjectId = new Types.ObjectId(rideId);
     const driverObjectId = new Types.ObjectId(driverId);
 
-   
+
     const updatedRide = await Ride.findOneAndUpdate(
       { _id: rideObjectId },
       {
@@ -156,55 +162,55 @@ export const rejectRide = async (req: Request, res: Response) => {
 
 
 export const updateRideStatus = async (req: Request, res: Response) => {
-	try {
-		const driverId = req.user?.id;
+  try {
+    const driverId = req.user?.id;
 
-		if (!driverId) return res.status(401).json({ message: 'Unauthorized', status: 401 });
+    if (!driverId) return res.status(401).json({ message: 'Unauthorized', status: 401 });
 
-		const { id } = req.params;
-		const rideObjectId = new Types.ObjectId(id);
-		const { status } = req.body as { status?: string };
-		if (!status || !['picked_up', 'in_transit', 'completed'].includes(status)) {
-			return res.status(400).json({ message: 'Invalid status', status: 400 });
-		}
+    const { id } = req.params;
+    const rideObjectId = new Types.ObjectId(id);
+    const { status } = req.body as { status?: string };
+    if (!status || !['picked_up', 'in_transit', 'completed'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status', status: 400 });
+    }
 
-		const ride = await Ride.findOne({ rider: rideObjectId });
-		if (!ride) return res.status(404).json({ message: 'Ride not found', status: 404 });
-		if (!ride.driver || ride.driver.toString() !== driverId) return res.status(403).json({ message: 'Forbidden', status: 403 });
+    const ride = await Ride.findOne({ rider: rideObjectId });
+    if (!ride) return res.status(404).json({ message: 'Ride not found', status: 404 });
+    if (!ride.driver || ride.driver.toString() !== driverId) return res.status(403).json({ message: 'Forbidden', status: 403 });
 
-		ride.status = status as any;
-		ride.history.push({ status: status as any, at: new Date(), by: new Types.ObjectId(driverId) });
+    ride.status = status as any;
+    ride.history.push({ status: status as any, at: new Date(), by: new Types.ObjectId(driverId) });
 
-		
-		if (status === 'completed') {
-			
-			const amount = ride.price ?? 0;
-			const earning = await Earning.create({ driver: new Types.ObjectId(driverId), ride: ride._id, amount, description: 'Ride fare' });
-	
-			await ride.save();
-			return res.json({ ride, earning, message: 'Ride completed', status: 200 });
-		}
 
-		await ride.save();
-		res.json({ ride, message: 'Ride updated', status: 200 });
-	} catch (err: any) {
-		res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
-	}
+    if (status === 'completed') {
+
+      const amount = ride.price ?? 0;
+      const earning = await Earning.create({ driver: new Types.ObjectId(driverId), ride: ride._id, amount, description: 'Ride fare' });
+
+      await ride.save();
+      return res.json({ ride, earning, message: 'Ride completed', status: 200 });
+    }
+
+    await ride.save();
+    res.json({ ride, message: 'Ride updated', status: 200 });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
+  }
 };
 
 export const setAvailability = async (req: Request, res: Response) => {
-	try {
-		const driverId = req.user?.id;
-		if (!driverId) return res.status(401).json({ message: 'Unauthorized', status: 401 });
+  try {
+    const driverId = req.user?.id;
+    if (!driverId) return res.status(401).json({ message: 'Unauthorized', status: 401 });
 
-		const { available } = req.body as { available?: boolean };
-		if (typeof available !== 'boolean') return res.status(400).json({ message: 'available boolean required', status: 400 });
+    const { available } = req.body as { available?: boolean };
+    if (typeof available !== 'boolean') return res.status(400).json({ message: 'available boolean required', status: 400 });
 
-		
-		res.json({ available, message: `Driver availability set to ${available ? 'online' : 'offline'}`, status: 200 });
-	} catch (err: any) {
-		res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
-	}
+
+    res.json({ available, message: `Driver availability set to ${available ? 'online' : 'offline'}`, status: 200 });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message || 'Invalid request', status: 400 });
+  }
 };
 
 // export const getEarningsHistory = async (req: Request, res: Response) => {
@@ -245,7 +251,7 @@ export const getDriverEarnings = async (req: Request, res: Response) => {
     const driverId = req.user?.id;
     if (!driverId) return res.status(401).json({ message: "Unauthorized" });
 
-    
+
     const rides = await Ride.find({ driver: driverId, status: "accepted" });
 
     const totalRides = rides.length;
