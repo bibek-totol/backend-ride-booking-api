@@ -1,14 +1,22 @@
 import nodemailer from "nodemailer";
 
 export async function sendVerificationEmail(code: string) {
+  const isGmail = process.env.SMTP_HOST?.includes("gmail");
+
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+    service: isGmail ? "gmail" : undefined,
+    host: isGmail ? undefined : process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT),
-    secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for other ports
+    secure: Number(process.env.SMTP_PORT) === 587,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    logger: true,
+    debug: true,
   });
 
   await transporter.sendMail({
@@ -24,14 +32,22 @@ export async function sendVerificationEmail(code: string) {
 }
 
 export async function sendLoginOtpEmail(email: string, code: string) {
+  const isGmail = process.env.SMTP_HOST?.includes("gmail");
+
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+    service: isGmail ? "gmail" : undefined,
+    host: isGmail ? undefined : process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT),
-    secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for other ports
+    secure: Number(process.env.SMTP_PORT) === 587,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    logger: true,
+    debug: true,
   });
 
   await transporter.sendMail({
