@@ -30,7 +30,7 @@ const isProtectedUser = (reqUserId: string, targetUser: any) => {
 
 export const getAllDriversAdditional = async (req: Request, res: Response) => {
   try {
-  
+
     const drivers = await DriverAdditional.find({}).populate("user", "name email");;
 
     if (!drivers || drivers.length === 0) {
@@ -160,6 +160,7 @@ export const approveDriver = async (req: Request, res: Response) => {
         id: driver._id,
         name: driver.name,
         email: driver.email,
+        phone: driver.phone,
         approved: driver.approved,
       },
     });
@@ -199,6 +200,7 @@ export const suspendDriver = async (req: Request, res: Response) => {
         id: driver._id,
         name: driver.name,
         email: driver.email,
+        phone: driver.phone,
         approved: driver.approved,
       },
     });
@@ -238,6 +240,7 @@ export const blockUser = async (req: Request, res: Response) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         blocked: user.blocked,
       },
     });
@@ -278,6 +281,7 @@ export const unblockUser = async (req: Request, res: Response) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         blocked: user.blocked,
       },
     });
@@ -311,6 +315,7 @@ export const deleteUser = async (req: Request, res: Response) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         blocked: user.blocked,
       },
     });
@@ -368,8 +373,8 @@ export const generateReport = async (req: Request, res: Response) => {
 
 export const getAllDriverEarnings = async (req: Request, res: Response) => {
   try {
-    const driverId = req.params.id; 
-    
+    const driverId = req.params.id;
+
     if (!driverId) return res.status(400).json({ message: "Driver ID required" });
 
     const rides = await Ride.find({ driver: driverId, status: "accepted" });

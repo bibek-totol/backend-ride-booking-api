@@ -22,3 +22,26 @@ export async function sendVerificationEmail(code: string) {
     `,
   });
 }
+
+export async function sendLoginOtpEmail(email: string, code: string) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    secure: true,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"Ride Booking App" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: "Login Verification Code",
+    html: `
+      <h3>Login Verification Code</h3>
+      <p>Your verification code is: <strong>${code}</strong></p>
+      <p>This code will expire in 2 minutes.</p>
+    `,
+  });
+}

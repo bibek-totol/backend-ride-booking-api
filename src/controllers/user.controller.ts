@@ -11,7 +11,7 @@ export const getProfile = async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: 'Unauthorized', status: 401 });
 
-    const user = await User.findById(userId).select('name email role createdAt');
+    const user = await User.findById(userId).select('name email role phone createdAt');
     if (!user) return res.status(404).json({ message: 'User not found', status: 404 });
 
     res.json({ user, status: 200, message: 'Profile fetched' });
@@ -27,7 +27,7 @@ export const getProfile = async (req: Request, res: Response) => {
 export const reverseGeocode = async (req: Request, res: Response) => {
   try {
 
-    
+
     const { lat, lng } = req.query;
 
     if (!lat || !lng) {
@@ -39,7 +39,7 @@ export const reverseGeocode = async (req: Request, res: Response) => {
     const response = await axios.get(url, {
       headers: { "User-Agent": "RideApp/1.0" },
     });
-     
+
     console.log("Geocode Response:", response.data);
     return res.json({
       address: response.data.display_name || "Unknown location",
@@ -53,7 +53,7 @@ export const reverseGeocode = async (req: Request, res: Response) => {
 
 export const getAcceptedRides = async (req: Request, res: Response) => {
   try {
-    
+
 
     const rides = await Ride.find({ status: 'accepted' }).populate('rider', 'name email').populate('driver', 'name email');
     res.json({ rides, status: 200, message: 'Accepted rides fetched' });
@@ -92,10 +92,10 @@ export const updateProfile = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { name, email, role } = req.body;
+    const { name, email, role, phone } = req.body;
 
-    
-    if (!name || !email || !role) {
+
+    if (!name || !email || !role || !phone) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
@@ -103,10 +103,10 @@ export const updateProfile = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid role" });
     }
 
-    
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { name, email, role },
+      { name, email, role, phone },
       { new: true }
     ).select("-password");
 
@@ -130,20 +130,20 @@ export const sendPasswordOtp = async (req: Request, res: Response) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-  
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); 
 
-    
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+
     user.passwordResetOtp = otp;
     user.passwordResetOtpExpires = expiresAt;
     await user.save();
 
-    
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),  
-     secure: true,      
+      port: Number(process.env.SMTP_PORT),
+      secure: true,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -152,9 +152,9 @@ export const sendPasswordOtp = async (req: Request, res: Response) => {
 
 
     transporter.verify((err, success) => {
-  if (err) console.log("SMTP Error:", err);
-  else console.log("SMTP Connected");
-});
+      if (err) console.log("SMTP Error:", err);
+      else console.log("SMTP Connected");
+    });
 
     await transporter.sendMail({
       from: `"Your App" <${process.env.SMTP_USER}>`,
@@ -196,7 +196,7 @@ export const verifyPasswordOtp = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
-  
+
     user.passwordResetOtp = undefined;
     user.passwordResetOtpExpires = undefined;
     await user.save();

@@ -1,44 +1,45 @@
 import { z } from 'zod';
 
-
 export const registerSchema = z.object({
-name: z.string().min(2),
-email: z.string().email(),
-password: z.string().min(6),
-role: z.enum(['rider','driver','admin']).optional()
+  name: z.string().min(2),
+  email: z.string().email(),
+  password: z.string().min(6),
+  role: z.enum(['rider', 'driver', 'admin']).optional(),
+  phone: z.string().min(10)
 });
-
 
 export const loginSchema = z.object({
-email: z.string().email(),
-password: z.string().min(6)
+  email: z.string().email(),
+  password: z.string().min(6)
 });
 
+export const verifyLoginOtpSchema = z.object({
+  email: z.string().email(),
+  otp: z.string().length(6)
+});
+
+export const resendOtpSchema = z.object({
+  email: z.string().email()
+});
 
 export const requestRideSchema = z.object({
-pickup: z.object({ lat: z.number(), lng: z.number(), address: z.string().optional() }),
-destination: z.object({ lat: z.number(), lng: z.number(), address: z.string().optional() }),
- price: z.number(),
- payment: z.object({
+  pickup: z.object({ lat: z.number(), lng: z.number(), address: z.string().optional() }),
+  destination: z.object({ lat: z.number(), lng: z.number(), address: z.string().optional() }),
+  price: z.number(),
+  payment: z.object({
     method: z.string().optional(),
-   paymentIntentId: z.string().optional(),
-   amount: z.number().optional(),
-
- }),
- riderName: z.string().optional(),
- riderEmail: z.string().optional(),
+    paymentIntentId: z.string().optional(),
+    amount: z.number().optional(),
+  }),
+  riderName: z.string().optional(),
+  riderEmail: z.string().optional(),
 });
-
-
-
-
 
 export const updateRideStatusSchema = z.object({
-status: z.enum(['accepted','rejected','picked_up','in_transit','completed','cancelled']),
-note: z.string().optional()
+  status: z.enum(['accepted', 'rejected', 'picked_up', 'in_transit', 'completed', 'cancelled']),
+  note: z.string().optional()
 });
 
-
 export const setAvailabilitySchema = z.object({
-online: z.boolean()
+  online: z.boolean()
 });

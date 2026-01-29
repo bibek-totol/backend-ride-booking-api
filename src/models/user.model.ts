@@ -7,11 +7,14 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   role: Role;
+  phone: string;
   blocked: boolean;
   approved: boolean;
   googleId?: string;
   passwordResetOtp?: string;
   passwordResetOtpExpires?: Date;
+  loginOtp?: string;
+  loginOtpExpires?: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -23,7 +26,7 @@ const userSchema = new Schema<IUser>(
     password: {
       type: String,
       required: function (this: any) {
-        return !this.googleId; 
+        return !this.googleId;
       },
     },
 
@@ -33,6 +36,8 @@ const userSchema = new Schema<IUser>(
       default: "rider",
     },
 
+    phone: { type: String, required: true },
+
     blocked: { type: Boolean, default: false },
     approved: { type: Boolean, default: false },
 
@@ -40,6 +45,8 @@ const userSchema = new Schema<IUser>(
 
     passwordResetOtp: { type: String },
     passwordResetOtpExpires: { type: Date },
+    loginOtp: { type: String },
+    loginOtpExpires: { type: Date },
   },
   { timestamps: true }
 );

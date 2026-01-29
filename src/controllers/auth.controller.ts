@@ -7,11 +7,11 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt";
 import { getRedis } from "../config/redis";
-import { loginSchema, registerSchema } from "../validation/schemas";
+import { loginSchema, registerSchema, verifyLoginOtpSchema, resendOtpSchema } from "../validation/schemas";
 import { maskToken } from "../utils/maskToken";
 import { error } from "console";
 import crypto from "crypto";
-import { sendVerificationEmail } from "../utils/email";
+import { sendVerificationEmail, sendLoginOtpEmail } from "../utils/email";
 
 
 
@@ -109,6 +109,7 @@ export const register = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        phone: user.phone,
         approved: user.approved,
         blocked: user.blocked,
       },
@@ -141,46 +142,17 @@ export const login = async (req: Request, res: Response) => {
         .status(400)
         .json({ message: "Invalid credentials", status: 400 });
 
-    let refreshToken = await redisClient.get(`refresh-token:${user._id}`);
-    let accessToken = await redisClient.get(`access-token:${user._id}`);
-    if (!accessToken) {
-      accessToken = generateAccessToken({
-        id: String(user._id),
-        role: user.role,
-      });
-      await redisClient.set(`access-token:${user._id}`, accessToken, {
-        EX: 240 * 60,
-      });
-    }
+    const otp = crypto.randomInt(100000, 999999).toString();
+    user.loginOtp = otp;
+    user.loginOtpExpires = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
+    await user.save();
 
-
-
-
-
-    if (!refreshToken) {
-      refreshToken = generateRefreshToken({
-        id: String(user._id),
-        role: user.role,
-      });
-
-      await redisClient.set(`refresh-token:${user._id}`, refreshToken, {
-        EX: 2 * 24 * 60 * 60,
-      });
-    }
+    await sendLoginOtpEmail(user.email, otp);
 
     res.json({
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        approved: user.approved,
-        blocked: user.blocked,
-      },
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-      message: "Login successful",
+      message: "OTP sent to your email",
       status: 200,
+      requiresOtp: true
     });
   } catch (err: any) {
     res
@@ -199,7 +171,41 @@ export const googleCallback = async (req: any, res: Response) => {
       return res.redirect(`${process.env.FRONTEND_URL}/login`);
     }
 
-    const role = req.session.role || "rider";
+    // ✅ Check if user email is admin email - prevent OAuth login for admins
+    const adminEmail = process.env.VERIFICATION_RECEIVER_EMAIL || "bibektotol@gmail.com";
+    if (user.email === adminEmail) {
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/login?error=${encodeURIComponent(
+          "Admin accounts cannot use Google sign-in. Please use email and password login."
+        )}`
+      );
+    }
+
+    // ✅ Decode role from state parameter
+    let role: "rider" | "driver" = "rider";
+
+    if (req.query.state) {
+      try {
+        // Decode base64 state parameter
+        const decodedState = Buffer.from(req.query.state as string, 'base64').toString('utf-8');
+        const parsed = JSON.parse(decodedState);
+
+        const parsedRole = parsed.role;
+
+        // Validate that the role is one of the allowed values
+        if (parsedRole === "rider" || parsedRole === "driver") {
+          role = parsedRole;
+        }
+      } catch (err) {
+        // If state decoding fails, use default role
+        console.warn("Could not decode state parameter, using default role:", err);
+        role = "rider";
+      }
+    }
+
+
+
+
     user.role = role;
     await user.save();
 
@@ -212,7 +218,7 @@ export const googleCallback = async (req: any, res: Response) => {
     await redis.set(`refresh-token:${userId}`, refreshToken, { EX: 2 * 24 * 60 * 60 });
     await redis.set(`access-token:${userId}`, accessToken, { EX: 240 * 60 });
 
-    
+
     const userPayload = {
       id: user._id,
       name: user.name,
@@ -311,5 +317,76 @@ export const logout = async (req: Request, res: Response) => {
     res
       .status(500)
       .json({ message: err.message || "Internal server error", status: 500 });
+  }
+};
+
+export const verifyLoginOtp = async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = verifyLoginOtpSchema.parse(req.body);
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found", status: 404 });
+    }
+
+    if (!user.loginOtp || !user.loginOtpExpires || user.loginOtpExpires < new Date()) {
+      return res.status(400).json({ message: "OTP expired or not found", status: 400 });
+    }
+
+    if (user.loginOtp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP", status: 400 });
+    }
+
+    // Clear OTP
+    user.loginOtp = undefined;
+    user.loginOtpExpires = undefined;
+    await user.save();
+
+    const redisClient = getRedis();
+    const accessToken = generateAccessToken({ id: String(user._id), role: user.role });
+    const refreshToken = generateRefreshToken({ id: String(user._id), role: user.role });
+
+    await redisClient.set(`refresh-token:${user._id}`, refreshToken, { EX: 2 * 24 * 60 * 60 });
+    await redisClient.set(`access-token:${user._id}`, accessToken, { EX: 240 * 60 });
+
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone,
+        approved: user.approved,
+        blocked: user.blocked,
+      },
+      accessToken,
+      refreshToken,
+      message: "Login successful",
+      status: 200,
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || "Internal server error", status: 500 });
+  }
+};
+
+export const resendOtp = async (req: Request, res: Response) => {
+  try {
+    const { email } = resendOtpSchema.parse(req.body);
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found", status: 404 });
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    user.loginOtp = otp;
+    user.loginOtpExpires = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
+    await user.save();
+
+    await sendLoginOtpEmail(user.email, otp);
+
+    res.json({ message: "OTP resent successfully", status: 200 });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || "Internal server error", status: 500 });
   }
 };
