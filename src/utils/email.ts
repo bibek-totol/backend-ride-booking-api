@@ -7,14 +7,17 @@ export async function sendVerificationEmail(code: string) {
     service: isGmail ? "gmail" : undefined,
     host: isGmail ? undefined : process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT),
-    secure: Number(process.env.SMTP_PORT) === 587,
+    secure: Number(process.env.SMTP_PORT) === 465, // MUST be false for port 587
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
+    tls: {
+      rejectUnauthorized: false
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
     logger: true,
     debug: true,
   });
@@ -38,14 +41,17 @@ export async function sendLoginOtpEmail(email: string, code: string) {
     service: isGmail ? "gmail" : undefined,
     host: isGmail ? undefined : process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT),
-    secure: Number(process.env.SMTP_PORT) === 587,
+    secure: Number(process.env.SMTP_PORT) === 465, // MUST be false for port 587
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
+    tls: {
+      rejectUnauthorized: false
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
     logger: true,
     debug: true,
   });
