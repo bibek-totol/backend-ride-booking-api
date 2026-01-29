@@ -3,44 +3,79 @@ import type { Transporter } from "nodemailer";
 
 // Email configuration verification
 const verifyEmailConfig = () => {
-  const requiredVars = ['SMTP_USER', 'SMTP_PASS', 'SMTP_HOST', 'SMTP_PORT'];
-  const missing = requiredVars.filter(v => !process.env[v]);
+  const isProduction = process.env.NODE_ENV === 'production';
 
-  if (missing.length > 0) {
-    console.error(`[EMAIL_CONFIG] Missing environment variables: ${missing.join(', ')}`);
-    return false;
+  // For production, we need Mailtrap credentials
+  if (isProduction) {
+    const requiredVars = ['MAILTRAP_USER', 'MAILTRAP_PASS', 'MAILTRAP_HOST', 'MAILTRAP_PORT'];
+    const missing = requiredVars.filter(v => !process.env[v]);
+
+    if (missing.length > 0) {
+      console.error(`[EMAIL_CONFIG] Missing Mailtrap environment variables: ${missing.join(', ')}`);
+      return false;
+    }
+
+    console.log(`[EMAIL_CONFIG] ✅ Mailtrap configuration verified (Production)`);
+    console.log(`[EMAIL_CONFIG] Host: ${process.env.MAILTRAP_HOST}`);
+    console.log(`[EMAIL_CONFIG] Port: ${process.env.MAILTRAP_PORT}`);
+    console.log(`[EMAIL_CONFIG] User: ${process.env.MAILTRAP_USER}`);
+  } else {
+    // For development, use Gmail
+    const requiredVars = ['SMTP_USER', 'SMTP_PASS', 'SMTP_HOST', 'SMTP_PORT'];
+    const missing = requiredVars.filter(v => !process.env[v]);
+
+    if (missing.length > 0) {
+      console.error(`[EMAIL_CONFIG] Missing Gmail environment variables: ${missing.join(', ')}`);
+      return false;
+    }
+
+    console.log(`[EMAIL_CONFIG] ✅ Gmail configuration verified (Development)`);
+    console.log(`[EMAIL_CONFIG] Host: ${process.env.SMTP_HOST}`);
+    console.log(`[EMAIL_CONFIG] Port: ${process.env.SMTP_PORT}`);
+    console.log(`[EMAIL_CONFIG] User: ${process.env.SMTP_USER}`);
   }
 
-  console.log(`[EMAIL_CONFIG] Configuration verified`);
-  console.log(`[EMAIL_CONFIG] SMTP Host: ${process.env.SMTP_HOST}`);
-  console.log(`[EMAIL_CONFIG] SMTP Port: ${process.env.SMTP_PORT}`);
-  console.log(`[EMAIL_CONFIG] SMTP User: ${process.env.SMTP_USER}`);
   console.log(`[EMAIL_CONFIG] Environment: ${process.env.NODE_ENV || 'development'}`);
-
   return true;
 };
 
-// Create transporter with production-ready configuration
+// Create transporter with environment-based configuration
 const createTransporter = (): Transporter => {
   if (!verifyEmailConfig()) {
     throw new Error("Email configuration is incomplete. Check environment variables.");
   }
 
-  const config = {
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: parseInt(process.env.SMTP_PORT || "465"),
-    secure: true, // Use SSL for port 465
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false
-    },
-    connectionTimeout: 15000, // 15 seconds
-    greetingTimeout: 10000, // 10 seconds
-    socketTimeout: 20000, // 20 seconds
-  };
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  let config;
+
+  if (isProduction) {
+    // Mailtrap configuration for production
+    config = {
+      host: process.env.MAILTRAP_HOST!,
+      port: parseInt(process.env.MAILTRAP_PORT!),
+      auth: {
+        user: process.env.MAILTRAP_USER!,
+        pass: process.env.MAILTRAP_PASS!,
+      },
+    };
+    console.log(`[EMAIL_CONFIG] 📧 Using Mailtrap for production emails`);
+  } else {
+    // Gmail configuration for development
+    config = {
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: parseInt(process.env.SMTP_PORT || "465"),
+      secure: true, // Use SSL for port 465
+      auth: {
+        user: process.env.SMTP_USER!,
+        pass: process.env.SMTP_PASS!,
+      },
+      tls: {
+        rejectUnauthorized: false
+      },
+    };
+    console.log(`[EMAIL_CONFIG] 📧 Using Gmail for development emails`);
+  }
 
   console.log(`[EMAIL_CONFIG] Creating transporter with host: ${config.host}:${config.port}`);
 
