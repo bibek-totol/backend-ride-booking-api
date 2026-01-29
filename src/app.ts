@@ -16,7 +16,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://ride-booking-nexus.vercel.app",
-      
+
 
     ],
 
@@ -37,8 +37,9 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-origin in production
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   })
 );

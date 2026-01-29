@@ -126,41 +126,76 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
+  console.log("[LOGIN_CONTROLLER] Login attempt for:", req.body.email);
+  console.log("[LOGIN_CONTROLLER] Environment:", process.env.NODE_ENV);
+
   try {
     const redisClient = getRedis();
     const data = loginSchema.parse(req.body);
 
     const user = await User.findOne({ email: data.email });
-    if (!user)
+    if (!user) {
+      console.log("[LOGIN_CONTROLLER] User not found:", data.email);
       return res
         .status(404)
         .json({ message: "Currently No User Found", status: 404 });
+    }
 
     const match = await comparePassword(data.password, user.password as string);
-    if (!match)
+    if (!match) {
+      console.log("[LOGIN_CONTROLLER] Invalid password for:", data.email);
       return res
         .status(400)
         .json({ message: "Invalid credentials", status: 400 });
+    }
 
+    console.log("[LOGIN_CONTROLLER] Credentials verified, generating OTP...");
     const otp = crypto.randomInt(100000, 999999).toString();
     user.loginOtp = otp;
     user.loginOtpExpires = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
     await user.save();
+    console.log("[LOGIN_CONTROLLER] OTP saved to database");
 
-    await sendLoginOtpEmail(user.email, otp);
+    // Send email with comprehensive error handling
+    try {
+      console.log("[LOGIN_CONTROLLER] Attempting to send OTP email...");
+      await sendLoginOtpEmail(user.email, otp);
+      console.log("[LOGIN_CONTROLLER] ✅ OTP email sent successfully");
 
-    res.json({
-      message: "OTP sent to your email",
-      status: 200,
-      requiresOtp: true
-    });
+      res.json({
+        message: "OTP sent to your email",
+        status: 200,
+        requiresOtp: true
+      });
+    } catch (emailError: any) {
+      console.error("[LOGIN_CONTROLLER] ❌ Email sending failed:", {
+        error: emailError.message,
+        code: emailError.code,
+        user: user.email
+      });
+
+      // Clear the OTP since email failed
+      user.loginOtp = undefined;
+      user.loginOtpExpires = undefined;
+      await user.save();
+
+      return res.status(500).json({
+        message: "Failed to send OTP email. Please try again or contact support.",
+        error: process.env.NODE_ENV === 'development' ? emailError.message : undefined,
+        status: 500
+      });
+    }
   } catch (err: any) {
-    console.error("Login Controller Error:", err);
+    console.error("[LOGIN_CONTROLLER] Unexpected error:", {
+      message: err.message,
+      stack: err.stack
+    });
     res
       .status(400)
       .json({ message: err.message || "Invalid data", status: 400 });
   }
 };
+
 
 
 
@@ -371,23 +406,55 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
 };
 
 export const resendOtp = async (req: Request, res: Response) => {
+  console.log("[RESEND_OTP] Resend OTP request");
+
   try {
     const { email } = resendOtpSchema.parse(req.body);
+    console.log("[RESEND_OTP] Email:", email);
 
     const user = await User.findOne({ email });
     if (!user) {
+      console.log("[RESEND_OTP] User not found:", email);
       return res.status(404).json({ message: "User not found", status: 404 });
     }
 
+    console.log("[RESEND_OTP] Generating new OTP...");
     const otp = crypto.randomInt(100000, 999999).toString();
     user.loginOtp = otp;
     user.loginOtpExpires = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
     await user.save();
+    console.log("[RESEND_OTP] OTP saved to database");
 
-    await sendLoginOtpEmail(user.email, otp);
+    // Send email with comprehensive error handling
+    try {
+      console.log("[RESEND_OTP] Attempting to send OTP email...");
+      await sendLoginOtpEmail(user.email, otp);
+      console.log("[RESEND_OTP] ✅ OTP email sent successfully");
 
-    res.json({ message: "OTP resent successfully", status: 200 });
+      res.json({ message: "OTP resent successfully", status: 200 });
+    } catch (emailError: any) {
+      console.error("[RESEND_OTP] ❌ Email sending failed:", {
+        error: emailError.message,
+        code: emailError.code,
+        user: user.email
+      });
+
+      // Clear the OTP since email failed
+      user.loginOtp = undefined;
+      user.loginOtpExpires = undefined;
+      await user.save();
+
+      return res.status(500).json({
+        message: "Failed to resend OTP email. Please try again or contact support.",
+        error: process.env.NODE_ENV === 'development' ? emailError.message : undefined,
+        status: 500
+      });
+    }
   } catch (err: any) {
+    console.error("[RESEND_OTP] Unexpected error:", {
+      message: err.message,
+      stack: err.stack
+    });
     res.status(500).json({ message: err.message || "Internal server error", status: 500 });
   }
 };
