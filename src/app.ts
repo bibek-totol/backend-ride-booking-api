@@ -16,8 +16,10 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://ride-booking-nexus.vercel.app",
+      
+
     ],
-    
+
     credentials: true,
   })
 );
@@ -50,7 +52,7 @@ initSocket(server);
 
 app.use('/api', routes);
 app.get('/', (req, res) => {
-   
+
   res.send("Welcome to Ride Booking Server")
 
 
