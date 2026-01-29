@@ -155,6 +155,7 @@ export const login = async (req: Request, res: Response) => {
       requiresOtp: true
     });
   } catch (err: any) {
+    console.error("Login Controller Error:", err);
     res
       .status(400)
       .json({ message: err.message || "Invalid data", status: 400 });
