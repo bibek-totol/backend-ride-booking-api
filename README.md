@@ -13,29 +13,6 @@ Importing the collection
 1. In Postman: File → Import → choose `postman_collection.json` from the project root.
 2. After import, open the collection and set an environment (or collection) variable `base_url` if your server runs on a different host/port.
 
-## 📧 Email Configuration
-
-This API uses email for OTP-based authentication. The email service automatically switches between:
-
-- **Development**: Gmail SMTP (configured in `.env`)
-- **Production**: Mailtrap (configured in Render environment variables)
-
-### Quick Setup:
-
-1. **For Local Development**: Already configured with Gmail ✓
-2. **For Production**: Set up Mailtrap
-   - See [`MAILTRAP_SETUP_GUIDE.md`](./MAILTRAP_SETUP_GUIDE.md) for detailed instructions
-   - See [`MAILTRAP_QUICK_REFERENCE.md`](./MAILTRAP_QUICK_REFERENCE.md) for quick reference
-
-### Test Email Configuration:
-
-```bash
-# Test Gmail (development)
-npx tsx test-email.ts
-
-# Test Mailtrap (production)
-npx tsx test-mailtrap.ts
-```
 
 
 Setting dynamic variables
@@ -51,21 +28,7 @@ Quick token workflow
 1. Register or Login (Auth folder).
 2. Copy the returned `accessToken` and paste into the `accessToken` variable in Postman (or use the test script below to set it automatically).
 
-Optional Postman test script (auto-set tokens)
-In the Login request (Postman Tests tab) add:
 
-```javascript
-const body = pm.response.json();
-if (body && body.accessToken) {
-  pm.environment.set("accessToken", body.accessToken);
-}
-if (body && body.refreshToken) {
-  pm.environment.set("refreshToken", body.refreshToken);
-}
-if (body && body.user && body.user.id) {
-  pm.environment.set("userId", body.user.id);
-}
-```
 
 Routes reference (by group)
 
