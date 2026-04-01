@@ -3,4 +3,5 @@ dist
 .env
 .DS_Store
 .vscode
-uploads/
+uploads/*
+!uploads/.gitkeep
